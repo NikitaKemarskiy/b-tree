@@ -30,7 +30,10 @@ public class BTree<K extends Comparable<K>, V> {
     }
 
     public void remove(K key) { // Method that removes passed key-value entry
-        //...
+        if (root == null) { // Tree is empty
+            return;
+        }
+        root.remove(key);
     }
 
     public String traversal() {
