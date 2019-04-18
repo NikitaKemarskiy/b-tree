@@ -33,7 +33,7 @@ public class BTree<K extends Comparable<K>, V> {
         if (root == null) { // Tree is empty
             return;
         }
-        root.remove(key);
+        root = root.remove(key);
     }
 
     public String traversal() {

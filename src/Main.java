@@ -40,5 +40,33 @@ public class Main {
         tree.insert(34, "1");
 
         System.out.println(tree.traversal());
+        tree.remove(34);
+        System.out.println(tree.traversal());
+        tree.remove(33);
+        System.out.println(tree.traversal());
+        tree.remove(30);
+        System.out.println(tree.traversal());
+        tree.remove(29);
+        System.out.println(tree.traversal());
+        tree.remove(31);
+        System.out.println(tree.traversal());
+        tree.remove(28);
+        System.out.println(tree.traversal());
+        tree.remove(32);
+        System.out.println(tree.traversal());
+        tree.remove(27);
+        System.out.println(tree.traversal());
+        tree.remove(26);
+        System.out.println(tree.traversal());
+        tree.remove(25);
+        System.out.println(tree.traversal());
+        tree.remove(18);
+        System.out.println(tree.traversal());
+        tree.remove(19);
+        System.out.println(tree.traversal());
+        tree.remove(20);
+        System.out.println(tree.traversal());
+        tree.remove(21);
+        System.out.println(tree.traversal());
     }
 }

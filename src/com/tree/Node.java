@@ -35,14 +35,13 @@ class Node<K extends Comparable<K>, V> {
         }
     }
 
-    void remove(K key) { // Method that removes passed key-value entry
-        if (isEmpty()) { return; } // Node is empty
+    Node remove(K key) { // Method that removes passed key-value entry
+        if (isEmpty()) { return getRoot(); } // Node is empty
         int index = find(key);
-        if (index < n && key.compareTo(entries[index].getKey()) == 0) { // Item was found
-            removeEntry(index);
-        } else if (!isLeaf()) { // Range was found
-            children[index].remove(key);
-        }
+        if (has(key)) { // Item was found
+            return removeEntry(index);
+        } else if (!isLeaf()) { return children[index].remove(key); } // Range was found
+        return getRoot();
     }
 
     V search(K key) { // Method that searches a passed value
@@ -93,14 +92,35 @@ class Node<K extends Comparable<K>, V> {
             }
         }
 
-        parent.addChildren(left, right, index);
+        parent.setChildren(left, right, index);
         parent.addEntry(entries[mid].getKey(), entries[mid].getValue(), index);
         return parent.split();
     }
 
-    void unite() {
-        if (n >= t - 1) { return; } // Node shouldn't be rebuilt
-        if (isRoot()) { return; } // Node is a root
+    void addEntry(K key, V value, int index) { // Method that add entry into the passed index position
+        for (int i = n; i > index; i--) {
+            entries[i] = entries[i - 1];
+        }
+        entries[index] = new Entry<>(key, value);
+        n++;
+    }
+
+    void setChildren(Node left, Node right, int index) { // Method that replaces one child node with two children nodes
+        children[index] = left;
+        for (int i = n; i > index; i--) {
+            children[i + 1] = children[i];
+        }
+        children[index + 1] = right;
+    }
+
+    Node removeLeafEntry(int entryIndex) {
+        for (int i = entryIndex; i < n - 1; i++) {
+            entries[i] = entries[i + 1];
+        }
+        n--;
+
+        if (n >= t - 1) { return getRoot(); } // Node shouldn't be rebuilt
+        if (isRoot()) { return this; } // Node is a root
 
         int index = parent.find(entries[0].getKey()); // Index of the current node as a child
         if (index > 0) { // Take the left neighbour
@@ -110,7 +130,7 @@ class Node<K extends Comparable<K>, V> {
                 neighbour.removeEntry(neighbour.n - 1);
                 insert(parent.entries[index - 1].getKey(), parent.entries[index - 1].getValue());
                 parent.entries[index - 1] = delim;
-                return;
+                return getRoot();
             }
         }
         if (index < parent.n) { // Take the right neighbour
@@ -120,7 +140,7 @@ class Node<K extends Comparable<K>, V> {
                 neighbour.removeEntry(0);
                 insert(parent.entries[index].getKey(), parent.entries[index].getValue());
                 parent.entries[index] = delim;
-                return;
+                return getRoot();
             }
         }
         if (index > 0) { // Take the left neighbour
@@ -134,8 +154,13 @@ class Node<K extends Comparable<K>, V> {
             }
             node.insert(parent.entries[index - 1].getKey(), parent.entries[index - 1].getValue());
             parent.replaceChildren(index - 1, node);
-            parent.removeEntry(index - 1);
-            return;
+
+            for (int i = index - 1; i < parent.n - 1; i++) {
+                parent.entries[i] = parent.entries[i + 1];
+            }
+            parent.n--;
+
+            //return parent.removeEntry(index - 1);
         }
         if (index < parent.n) { // Take the right neighbour
             Node<K, V> node = new Node<>(t, parent);
@@ -148,42 +173,79 @@ class Node<K extends Comparable<K>, V> {
             }
             node.insert(parent.entries[index].getKey(), parent.entries[index].getValue());
             parent.replaceChildren(index, node);
-            parent.removeEntry(index);
-            return;
-        }
-    }
 
-    void addEntry(K key, V value, int index) {
-        for (int i = n; i > index; i--) {
-            entries[i] = entries[i - 1];
-        }
-        entries[index] = new Entry<>(key, value);
-        n++;
-    }
-
-    void addChildren(Node left, Node right, int index) {
-        children[index] = left;
-        for (int i = n; i > index; i--) {
-            children[i + 1] = children[i];
-        }
-        children[index + 1] = right;
-    }
-
-    void removeEntry(int index) {
-        if (isLeaf()) { // Node is a leaf
-            for (int i = index; i < n - 1; i++) {
-                entries[i] = entries[i + 1];
+            for (int i = index; i < parent.n - 1; i++) {
+                parent.entries[i] = parent.entries[i + 1];
             }
-            n--;
-            unite();
-        } else { // Node isn't a leaf
-            // TEST CODE
-            for (int i = index; i < n - 1; i++) {
-                entries[i] = entries[i + 1];
-            }
-            n--;
-            // TEST CODE
+            parent.n--;
+
+            //return parent.removeEntry(index);
         }
+        return getRoot();
+    }
+
+    Node removeInnerEntry(int index) {
+        if (children[index].n > t - 1) { // Left child has enough items
+            Entry<K, V> delim = children[index].entries[children[index].n - 1];
+            entries[index] = delim;
+            return children[index].removeEntry(children[index].n - 1);
+        }
+        if (children[index + 1].n > t - 1) { // Right child has enough items
+            Entry<K, V> delim = children[index + 1].entries[0];
+            entries[index] = delim;
+            return children[index + 1].removeEntry(0);
+        }
+
+        Node<K, V> node = new Node<>(t);
+        // Fill node with entries
+        for (int i = 0; i < children[index].n; i++) {
+            node.insert(children[index].entries[i].getKey(), children[index].entries[i].getValue());
+        }
+        for (int i = 0; i < children[index + 1].n; i++) {
+            node.insert(children[index + 1].entries[i].getKey(), children[index + 1].entries[i].getValue());
+        }
+        node.insert(entries[index].getKey(), entries[index].getValue());
+
+        // Fill node with children
+        for (int i = 0; i <= children[index].n; i++) {
+            node.children[i] = children[index].children[i];
+        }
+        for (int i = 0; i <= children[index + 1].n; i++) {
+            node.children[i + children[index].n + 1] = children[index + 1].children[i];
+        }
+
+        // Remove node
+        node.remove(entries[index].getKey());
+
+        // Remove entry in current node
+        for (int i = index; i < n - 1; i++) {
+            entries[i] = entries[i + 1];
+        }
+        n--;
+
+        // Replace two children with a new node
+        replaceChildren(index, node);
+
+        if (isEmpty()) { return node; }
+
+        node.setParent(this);
+
+        return getRoot();
+    }
+
+    Node removeInnerEntry(int index, Node node) {
+        // Remove entry in current node
+        for (int i = index; i < n - 1; i++) {
+            entries[i] = entries[i + 1];
+        }
+        n--;
+
+        // Replace two children with a new node
+        replaceChildren(index, node);
+    }
+
+    Node removeEntry(int index) {
+        return isLeaf() ? removeLeafEntry(index) : removeInnerEntry(index);
     }
 
     void replaceChildren(int index, Node node) {
@@ -223,6 +285,10 @@ class Node<K extends Comparable<K>, V> {
 
     boolean isEmpty() {
         return n == 0 ? true : false;
+    }
+
+    Node getRoot() {
+        return isRoot() || parent.isEmpty() ? this : parent.getRoot();
     }
 
     void setParent(Node parent) {
