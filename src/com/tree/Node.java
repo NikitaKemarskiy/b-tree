@@ -269,18 +269,27 @@ class Node<K extends Comparable<K>, V> {
     }
 
     V search(K key) { // Method that searches a passed value
-        int index = n;
-        for (int i = 0; i < n; i++) {
-            if (key.compareTo(entries[i].getKey()) == 0) { // Key was found
-                return entries[i].getValue();
-            }
-            if (key.compareTo(entries[i].getKey()) < 0) { // Right range was found
-                index = i;
-                break;
+        int high = n - 1;
+        int low = 0;
+        int comparisons = 0;
+        while (high >= low) {
+            int guess = (low + high) / 2;
+            comparisons++;
+            if (entries[guess].getKey().compareTo(key) > 0) {
+                if (guess > 0 && entries[guess - 1].getKey().compareTo(key) < 0) {
+                    //System.out.println("Comparisons: " + comparisons);
+                    return children[guess].search(key);
+                }
+                high = guess - 1;
+            } else if (entries[guess].getKey().compareTo(key) < 0) {
+                low = guess + 1;
+            } else {
+                //System.out.println("Comparisons: " + comparisons);
+                return entries[guess].getValue();
             }
         }
-
-        return isLeaf() ? null : children[index].search(key);
+        //System.out.println("Comparisons: " + comparisons);
+        return isLeaf() ? null : high < 0 ? children[0].search(key) : children[n].search(key);
     }
 
     Node split() { // Method that splits a node into two nodes
