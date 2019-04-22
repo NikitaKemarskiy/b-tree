@@ -278,7 +278,7 @@ class Node<K extends Comparable<K>, V> {
             if (entries[guess].getKey().compareTo(key) > 0) {
                 if (guess > 0 && entries[guess - 1].getKey().compareTo(key) < 0) {
                     //System.out.println("Comparisons: " + comparisons);
-                    return children[guess].search(key);
+                    return isLeaf() ? null : children[guess].search(key);
                 }
                 high = guess - 1;
             } else if (entries[guess].getKey().compareTo(key) < 0) {
